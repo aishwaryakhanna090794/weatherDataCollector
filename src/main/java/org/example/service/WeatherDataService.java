@@ -9,7 +9,6 @@ import org.springframework.web.client.RestTemplate;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
-import software.amazon.awssdk.services.dynamodb.model.PutItemResponse;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -24,45 +23,48 @@ public class WeatherDataService {
     WeatherData weatherData;
     private static final String TABLE_NAME = "WeatherData";
 
-    public void getWeatherForecastByCityIdAndAppID(String cityId, String appid) {
+    public void getWeatherForecastByCityIdAndAppID(String cityId, String appid) throws Exception {
 
-        String websiteResponse = "http://api.openweathermap.org/data/2.5/weather?q=" + cityId + "&appid=" + appid;
+        String websiteRequest = "http://api.openweathermap.org/data/2.5/weather?q=" + cityId + "&appid=" + appid;
+
+        System.out.println(websiteRequest);
+        RestTemplate restTemplate = new RestTemplate();
+        String websiteResponse = restTemplate.getForObject(websiteRequest, String.class);
 
         System.out.println(websiteResponse);
-        RestTemplate restTemplate = new RestTemplate();
-        String result = restTemplate.getForObject(websiteResponse, String.class);
-        if(result!=null) {
-            JSONObject root = new JSONObject(result);
+
+        JSONObject root = new JSONObject(websiteResponse);
+        int responseCode = root.getInt("cod");
+        if (responseCode == 200) {
             JSONObject main = root.getJSONObject("main");
-            weatherData.setTemp(String.valueOf(main.getFloat("temp")));
-            System.out.println("temp" + weatherData.getTemp());
-            weatherData.setCity(cityId);
+            if (!main.isEmpty()) {
+                weatherData.setTemp(String.valueOf(main.getFloat("temp")));
+                weatherData.setId(String.valueOf(Math.random()));
+                weatherData.setCity(cityId);
 
-            insertWeatherData(weatherData);
+                insertWeatherData(weatherData);
+            }
         }
     }
 
 
-    public void insertWeatherData(WeatherData weatherData) {
-        try{
-            Map<String, AttributeValue> item = new HashMap<>();
-            item.put("Id", AttributeValue.builder().s(String.valueOf(Math.random())).build());
-            item.put("city", AttributeValue.builder().s(weatherData.getCity()).build());
-            item.put("temperature", AttributeValue.builder().s(weatherData.getTemp()).build());
+    public void insertWeatherData(WeatherData weatherData) throws Exception {
+        Map<String, AttributeValue> item = new HashMap<>();
+        item.put("Id", AttributeValue.builder().s(weatherData.getId()).build());
+        item.put("city", AttributeValue.builder().s(weatherData.getCity()).build());
+        item.put("temperature", AttributeValue.builder().s(weatherData.getTemp()).build());
 
-            PutItemRequest request = PutItemRequest.builder()
-                    .tableName(TABLE_NAME)
-                    .item(item)
-                    .build();
+        PutItemRequest request = PutItemRequest.builder()
+                .tableName(TABLE_NAME)
+                .item(item)
+                .build();
 
-            PutItemResponse putItemResponse =dynamoDbClient.putItem(request);
-            System.out.print(putItemResponse);
-        }catch(Exception e){
-            System.out.println(e);
-        }
-
-
+        dynamoDbClient.putItem(request);
     }
-
-
 }
+
+
+
+
+
+
