@@ -1,4 +1,4 @@
-name: Check DynamoDB table
+name: Create Workflow
 
 on:
   push:
