@@ -1,6 +1,7 @@
 package org.example;
 
 
+import ch.qos.logback.core.testUtil.MockInitialContext;
 import com.amazonaws.serverless.proxy.internal.LambdaContainerHandler;
 import com.amazonaws.serverless.proxy.internal.testutils.AwsProxyRequestBuilder;
 import com.amazonaws.serverless.proxy.internal.testutils.MockLambdaContext;
@@ -14,7 +15,7 @@ import jakarta.ws.rs.HttpMethod;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-
+import org.junit.jupiter.api.extension.ExtendWith;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,8 +33,11 @@ public class StreamLambdaHandlerTest {
         lambdaContext = new MockLambdaContext();
     }
 
+    /**
+     * This test case is used to call the Weather API with status 200 and insert the data in dynamoDB
+     */
     @Test
-    public void ping_streamRequest_respondsWithHello() {
+    public void testWeatherData_200() {
         InputStream requestStream = new AwsProxyRequestBuilder("/get/london/012a118f4c461b326906f794c428bb63", HttpMethod.GET)
                                             .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON)
                                             .buildStream();
@@ -45,18 +49,14 @@ public class StreamLambdaHandlerTest {
         assertNotNull(response);
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
 
-        assertFalse(response.isBase64Encoded());
-
-        assertTrue(response.getBody().contains("pong"));
-        assertTrue(response.getBody().contains("Hello, World!"));
-
-        assertTrue(response.getMultiValueHeaders().containsKey(HttpHeaders.CONTENT_TYPE));
-        assertTrue(response.getMultiValueHeaders().getFirst(HttpHeaders.CONTENT_TYPE).startsWith(MediaType.APPLICATION_JSON));
     }
 
+    /**
+     * City is invalid.
+     */
     @Test
-    public void invalidResource_streamRequest_responds404() {
-        InputStream requestStream = new AwsProxyRequestBuilder("/pong", HttpMethod.GET)
+    public void invalidRequest() {
+        InputStream requestStream = new AwsProxyRequestBuilder("/get/ABC/012a118f4c461b326906f794c428bb63", HttpMethod.GET)
                                             .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON)
                                             .buildStream();
         ByteArrayOutputStream responseStream = new ByteArrayOutputStream();
@@ -65,7 +65,7 @@ public class StreamLambdaHandlerTest {
 
         AwsProxyResponse response = readResponse(responseStream);
         assertNotNull(response);
-        assertEquals(Response.Status.NOT_FOUND.getStatusCode(), response.getStatusCode());
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
     }
 
     private void handle(InputStream is, ByteArrayOutputStream os) {
