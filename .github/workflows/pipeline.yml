@@ -74,9 +74,9 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Create temporary directory
-      run: |
-        mkdir temp-repo
+    # - name: Create temporary directory
+    #   run: |
+    #     mkdir temp-repo
     - name: Locate ZIP file
       run: |
         ZIP_FILE=$(find . -name '*.zip')
