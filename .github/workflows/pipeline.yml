@@ -77,16 +77,15 @@ jobs:
     - name: Create temporary directory
       run: |
         mkdir temp-repo
-    - name: Locate JAR file
+    - name: Locate ZIP file
       run: |
-        JAR_FILE=$(find . -name '*.zip')
-        echo "JAR file found: $JAR_FILE"
-        echo "JAR_FILE_PATH=$JAR_FILE" >> $GITHUB_ENV
-    - name: Upload JAR file to S3
+        ZIP_FILE=$(find . -name '*.zip')
+        echo "ZIP_FILE_PATH=$ZIP_FILE" >> $GITHUB_ENV
+    - name: Upload ZIP file to S3
       run: |
         BUCKET_NAME="weather-data-api"
-        echo "Uploading $JAR_FILE_PATH to s3://$BUCKET_NAME/"
-        aws s3 cp $JAR_FILE_PATH s3://$BUCKET_NAME/ --region us-east-1 --debug
+        echo "Uploading $ZIP_FILE_PATH to s3://$BUCKET_NAME/"
+        aws s3 cp $ZIP_FILE_PATH s3://$BUCKET_NAME/ --region us-east-1 --debug
     # - name: Debug AWS S3 CP
     #   run: |
     #     BUCKET_NAME="weather-data-api"
@@ -112,10 +111,10 @@ jobs:
 
     - name: Create or Update Lambda Function
       run: |
-        JAR_FILE="WeatherDataApi-1.0-SNAPSHOT-lambda-package.zip"
+        ZIP_FILE="WeatherDataApi-1.0-SNAPSHOT-lambda-package.zip"
         FUNCTION_NAME="WeatherDataLambda"
         ROLE_ARN="arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/Lambda"
-        # JAR_FILE="weather-data-api.jar"  # Ensure this matches the JAR file name in S3
+        # ZIP_FILE="weather-data-api.ZIP"  # Ensure this matches the ZIP file name in S3
         BUCKET_NAME="weather-data-api"
         
         # Check if Lambda function already exists
@@ -128,7 +127,7 @@ jobs:
             --runtime java17 \
             --role $ROLE_ARN \
             --handler org.example.StreamLambdaHandler::handleRequest \
-            --code S3Bucket=$BUCKET_NAME,S3Key=$JAR_FILE \
+            --code S3Bucket=$BUCKET_NAME,S3Key=$ZIP_FILE \
             --timeout 60 \
             --memory-size 512
         else
@@ -136,5 +135,5 @@ jobs:
           aws lambda update-function-code \
             --function-name $FUNCTION_NAME \
             --s3-bucket $BUCKET_NAME \
-            --s3-key $JAR_FILE
+            --s3-key $ZIP_FILE
         fi
