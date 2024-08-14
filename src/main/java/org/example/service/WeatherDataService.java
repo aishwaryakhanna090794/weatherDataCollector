@@ -39,7 +39,7 @@ public class WeatherDataService {
             JSONObject main = root.getJSONObject("main");
             if (!main.isEmpty()) {
                 weatherData.setTemp(String.valueOf(main.getFloat("temp")));
-                weatherData.setId(String.valueOf(Math.random()));
+                weatherData.setId(String.valueOf((int)(Math.random() *(1000-1))));
                 weatherData.setCity(cityId);
 
                 insertWeatherData(weatherData);
